@@ -2013,5 +2013,11 @@
     "LabelAvailable": "Disponible",
     "LabelBundled": "Groupé",
     "ManageRepositories": "Gérer les dépôts",
-    "ViewAllPlugins": "Voir tous les plugiciels"
+    "ViewAllPlugins": "Voir tous les plugiciels",
+    "MessageConfirmReportBadMedia": "Signaler un problème pour ce média et déclencher un nouveau téléchargement?",
+    "MessageReportSubmitted": "Rapport soumis.",
+    "MessageReportFailed": "Échec de la soumission du rapport.",
+    "ReportBadMedia": "Signaler un mauvais média",
+    "HeaderReportBadMedia": "Signaler un mauvais média",
+    "ButtonReport": "Signaler"
 }

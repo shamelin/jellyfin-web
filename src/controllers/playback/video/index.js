@@ -29,6 +29,8 @@ import shell from '../../../scripts/shell';
 import SubtitleSync from '../../../components/subtitlesync/subtitlesync';
 import { appRouter } from '../../../components/router/appRouter';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
+import confirm from '../../../components/confirm/confirm';
+import toast from '../../../components/toast/toast';
 import LibraryMenu from '../../../scripts/libraryMenu';
 import { setBackdropTransparency, TRANSPARENCY_LEVEL } from '../../../components/backdrop/backdrop';
 import { pluginManager } from '../../../components/pluginManager';
@@ -198,6 +200,7 @@ export default function (view) {
             btnRewind.disabled = true;
             view.querySelector('.btnSubtitles').classList.add('hide');
             view.querySelector('.btnAudio').classList.add('hide');
+            view.querySelector('.btnReportBadMedia')?.classList.add('hide');
             view.querySelector('.osdTitle').innerHTML = '';
             view.querySelector('.osdMediaInfo').innerHTML = '';
             return;
@@ -224,6 +227,9 @@ export default function (view) {
             view.querySelector('.btnAudio').classList.add('hide');
         }
 
+        // Always show report button when a playable item is loaded
+        view.querySelector('.btnReportBadMedia')?.classList.remove('hide');
+
         if (currentItem.Chapters?.length > 1) {
             view.querySelector('.btnPreviousChapter').classList.remove('hide');
             view.querySelector('.btnNextChapter').classList.remove('hide');
@@ -231,6 +237,39 @@ export default function (view) {
             view.querySelector('.btnPreviousChapter').classList.add('hide');
             view.querySelector('.btnNextChapter').classList.add('hide');
         }
+    }
+
+    function onReportBadMediaClick() {
+        const item = currentItem;
+        if (!item || !item.Id) return;
+
+        const title = globalize.translate('HeaderReportBadMedia');
+        const text = globalize.translate('MessageConfirmReportBadMedia');
+        const confirmText = globalize.translate('ButtonReport');
+
+        confirm({ title, text, confirmText })
+            .then(() => {
+                const apiClient = ServerConnections.getApiClient(item.ServerId);
+                const url = apiClient.getUrl('Profixer/Report');
+                return apiClient.ajax({
+                    type: 'POST',
+                    url,
+                    data: JSON.stringify({ ItemId: item.Id }),
+                    contentType: 'application/json'
+                });
+            })
+            .then(() => {
+                toast(globalize.translate('MessageReportSubmitted'));
+            })
+            .catch(err => {
+                // Ignore rejection from confirm dialog (click outside or Cancel)
+                if (!err || err.message === 'Confirm dialog rejected') return;
+                console.error('[VideoOSD] Failed to report bad media', err);
+                toast(globalize.translate('MessageReportFailed'));
+            })
+            .finally(() => {
+                resetIdle();
+            });
     }
 
     function setTitle(item, parentName) {
@@ -1776,6 +1815,7 @@ export default function (view) {
         playbackManager.toggleAirPlay(currentPlayer);
     });
     view.querySelector('.btnVideoOsdSettings').addEventListener('click', onSettingsButtonClick);
+    view.querySelector('.btnReportBadMedia').addEventListener('click', onReportBadMediaClick);
     view.addEventListener('viewhide', function () {
         headerElement.classList.remove('hide');
     });
@@ -2070,4 +2110,3 @@ export default function (view) {
         });
     }
 }
-
